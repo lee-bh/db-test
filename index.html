@@ -1,0 +1,36 @@
+<html>
+    <body>
+        <h1>Hello World</h1>
+    </body>
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.7.1/firebase-firestore.js";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+      
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+          apiKey: "AIzaSyAv4AxsrcXAfSyMPgFEEuP5htgsAvggklA",
+          authDomain: "db-test-a7cd7.firebaseapp.com",
+          projectId: "db-test-a7cd7",
+          storageBucket: "db-test-a7cd7.firebasestorage.app",
+          messagingSenderId: "948757897128",
+          appId: "1:948757897128:web:8ee8fd523b7f458c5ac79d"
+        };
+      
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+try {
+  const docRef = await addDoc(collection(db, "users"), {
+    first: "Ada",
+    last: "Lovelace",
+    born: 1815
+  });
+  console.log("Document written with ID: ", docRef.id);
+} catch (e) {
+  console.error("Error adding document: ", e);
+}
+      </script>
+</html>
