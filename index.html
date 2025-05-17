@@ -1,342 +1,45 @@
-<!DOCTYPE html>
 <html>
-<head>
-    <meta name="viewport" content="width=400, user-scalable=no">
-    <meta name="theme-color" content="#000000">
-    <title>(t,i,x,y) => "creative code golfing"</title>
-    <meta name="description" content="A minimalist coding environment. Control 16x16 points with a single JavaScript function.">
-    
-    <style>
-        html {
-            background-color: #000;
-            color: #fff;
-            height: 100%;
-        }
-        
-        * {
-            box-sizing: border-box;
-        }
-        
-        a:link, a:visited {
-            color: #f24;
-        }
-        
-        *, html, input {
-            font-family: monospace;
-            font-size: 14px;
-        }
-        
-        body {
-            padding: 0;
-            margin: 0;
-            display: grid;
-            align-items: center;
-            justify-items: center;
-            height: 100%;
-        }
-        
-        #editor, #editor.over-limit.focus label.limit-warning, #output, input, label {
-            display: block;
-        }
-        
-        #editor {
-            width: 271px;
-            line-height: 1.15em;
-        }
-        
-        #editor #input {
-            background: 0 0;
-            color: #fff;
-            padding: 0;
-            margin: .15em 0;
-            border: 0;
-            width: 100%;
-        }
-        
-        #editor #input:focus {
-            outline: 0;
-        }
-        
-        #code-runner, #editor label.limit-warning, #editor.over-limit.focus label.second {
-            display: none;
-        }
-        
-        #editor #comment {
-            color: #f24;
-        }
-        
-        #editor.over-limit #input {
-            background: #f24;
-            color: #fff;
-        }
-    </style>
-
-    <!-- Favicon links -->
-    <link rel="icon" type="image/png" href="/favicon.9fed2980.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.b9a24498.png">
-    <link rel="icon" type="image/png" sizes="512x512" href="/android-chrome-512x512.e49c1300.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="/android-chrome-192x192.b729a878.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.76100e1a.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.3b2b8e5e.png">
-
-    <!-- Twitter card metadata -->
-    <meta name="twitter:card" content="summary">
-    <meta name="twitter:site" content="@aemkei">
-    <meta name="twitter:title" content="(t,i,x,y) => 'creative code golfing'">
-    <meta name="twitter:description" content="A minimalist coding environment. Control 16x16 points with a single JavaScript function. By @aemkei">
-    <meta name="twitter:image" content="https://tixy.land/assets/twitter-card.png">
-</head>
-<body>
-    <canvas id="output"></canvas>
-    <form id="editor">
-        <div id="comment">
-            <label class="first" for="input">// tixy - creative code golfing</label>
-            <label class="second" for="input">// click the dots for more info</label>
-            <label class="limit-warning" for="input">// use 32 characters or less</label>
-        </div>
-        <label id="label" for="input">(t,i,x,y) =></label>
-        <input 
-            name="code" 
-            id="input" 
-            type="text" 
-            value="Math.sin(y/8+t)" 
-            autocomplete="off" 
-            autocapitalize="off" 
-            spellcheck="false" 
-            autocorrect="off" 
-            enterkeyhint="go"
-        >
-    </form>
-
-    <script>
-        // Examples data
-        const examples = {
-            "for every dot return 0 or 1 \nto change the visibility": "Math.random() < 0.1",
-            "use a float between 0 and 1\n to define the size": "Math.random()",
-            "parameter `t` is \nthe time in seconds": "Math.sin(t)",
-            "param `i` is the index \nof the dot (0..255)": "i / 256",
-            "`x` is the column index\n from 0 to 15": "x / 16",
-            "`y` is the row\n also from 0 to 15": "y / 16",
-            "positive numbers are white,\nnegatives are red": "y - 7.5",
-            "use the time\nto animate values": "y - t",
-            "multiply the time\nto change the speed": "y - t*4",
-            "create patterns using \ndifferent color": "[1, 0, -1][i%3]",
-            "skip `Math.` to use methods \nand props like `sin` or `PI`": "sin(t-sqrt((x-7.5)**2+(y-6)**2))",
-            "more examples ...": "sin(y/8 + t)",
-            "simple triangle": "y - x",
-            "quarter triangle": "(y > x) && (14-x < y)",
-            "pattern": "i%4 - y%4",
-            "grid": "x%4 && y%4",
-            "square": "x>3 & y>3 & x<12 & y<12",
-            "animated square": "-(x>t & y>t & x<15-t & y<15-t)",
-            "mondrian squares": "(y-6) * (x-6)",
-            "moving cross": "(y-4*t|0) * (x-2-t|0)",
-            "sierpinski": "4 * t & i & x & y",
-            "binary clock": "(t*10) & (1<<x) && y==8",
-            "random noise": "random() * 2 - 1",
-            "static smooth noise": "sin(i ** 2)",
-            "animated smooth noise": "cos(t + i + x * y)",
-            "waves": "sin(x/2) - sin(x-t) - y+6",
-            "bloop bloop bloop\nby @v21": "(x-8)*(y-8) - sin(t)*64",
-            "fireworks\nby @p_malin and @aemkei": "-.4/(hypot(x-t%10,y-t%8)-t%2*9)",
-            "ripples\nby @thespite": "Math.sin(t-Math.sqrt(x*x+y*y))",
-            "scrolling TIXY font\nby @atesgoral": "[5463,2194,2386][y+t*9&7]&1<<x-1",
-            "3d checker board\nby @p_malin": "(((x-8)/y+t*5)&1^1/y*8&1)*y/5",
-            "sticky blood\nby @joeytwiddle": "y-t*3+9+3*cos(x*3-t)-5*sin(x*7)",
-            "3d starfield\nby @p_malin": "d=y*y%5.9+1,!((x+t*50/d)&15)/d",
-            "dialogue with an alien\nby @chiptune": "1/32*tan(t/64*x*tan(i-x))",
-            "space invader\nby @keithclarkcouk + @zozuar": "'p}¶¼<¼¶}p'.charCodeAt(x)&2**y",
-            "hungry pac man\nby @p_malin and @aemkei": "hypot(x-=t%4*5,y-=8)<6&&x<y|y<-x",
-            "spectrum analyser\nby @joeytwiddle": "x&y<9&y>4+sin(8*t+x*x)+x/4",
-            "diagonals": "y == x || -(15-x == y)",
-            "frame": "x==0 | x==15 | y==0 | y==15",
-            "drop": "8*t%13 - hypot(x-7.5, y-7.5)",
-            "rotation": "sin(2*atan((y-7.5)/(x-7.5))+5*t)",
-            "wipe": "(x-y) - sin(t) * 16",
-            "soft wipe": "(x-y)/24 - sin(t)",
-            "disco": "sin(t*5) * tan(t*7)",
-            "input is limited \nto 32 characters!": "(x-5)**2 + (y-5)**2 - 99*sin(t)",
-            "click here to \ncreate your own": "'HAVE FUN!'"
-        };
-
-        // Constants
-        const GRID_SIZE = 16;
-        const DOT_SIZE = 16;
-        const SPACING = 1;
-        const CANVAS_SIZE = GRID_SIZE * (DOT_SIZE + SPACING) - SPACING;
-
-        // DOM elements
-        const input = document.getElementById('input');
-        const editor = document.getElementById('editor');
-        const comment = document.getElementById('comment');
-        const canvas = document.getElementById('output');
-        const ctx = canvas.getContext('2d');
-        const pixelRatio = window.devicePixelRatio || 1;
-
-        // State variables
-        let renderFunction = function() {};
-        let startTime = null;
-        let code = '';
-
-        // Initialize canvas
-        canvas.width = canvas.height = CANVAS_SIZE * pixelRatio;
-        ctx.scale(pixelRatio, pixelRatio);
-        canvas.style.width = canvas.style.height = `${CANVAS_SIZE}px`;
-
-        // Load code from URL if present
-        function loadCodeFromURL() {
-            const url = new URL(document.location);
-            if (url.searchParams.has('code')) {
-                input.value = url.searchParams.get('code');
-            }
-        }
-
-        // Update code and validate
-        function updateCode() {
-            code = input.value;
-            startTime = null;
-            
-            if (code.length > 32) {
-                editor.classList.add('over-limit');
-            } else {
-                editor.classList.remove('over-limit');
-            }
-
-            try {
-                renderFunction = new Function('t', 'i', 'x', 'y', `
-                    try {
-                        with (Math) {
-                            return ${code};
-                        }
-                    } catch (error) {
-                        return error;
-                    }
-                `);
-            } catch (e) {
-                renderFunction = null;
-            }
-        }
-
-        // Update comment labels
-        function updateCommentLabels(lines) {
-            const labels = comment.querySelectorAll('label');
-            if (lines.length === 1) {
-                labels[0].innerHTML = '&nbsp;';
-                labels[1].innerHTML = `// ${lines[0]}`;
-            } else {
-                labels[0].innerHTML = `// ${lines[0]}`;
-                labels[1].innerHTML = `// ${lines[1]}`;
-            }
-        }
-
-        // Update comment based on current code
-        function updateComment() {
-            const currentCode = input.value;
-            const exampleValues = Object.values(examples);
-            const exampleKey = Object.keys(examples)[exampleValues.indexOf(currentCode)];
-            if (exampleKey) {
-                updateCommentLabels(exampleKey.split('\n'));
-            }
-        }
-
-        // Initialize
-        loadCodeFromURL();
-        input.addEventListener('input', updateCode);
-        updateCode();
-
-        // Focus/blur handlers
-        input.addEventListener('focus', () => {
-            editor.classList.add('focus');
-            updateCommentLabels([
-                'hit "enter" to save in URL',
-                'or get <a href="https://twitter.com/aemkei/status/1323399877611708416">more info here</a>'
-            ]);
-        });
-
-        input.addEventListener('blur', () => {
-            updateComment();
-            editor.classList.remove('focus');
-        });
-
-        // Form submission handler
-        editor.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const url = new URL(document.location);
-            url.searchParams.set('code', code);
-            history.replaceState(null, code, url);
-        });
-
-        // Animation loop
-        function animate() {
-            let time = 0;
-            if (startTime) {
-                time = (new Date() - startTime) / 1000;
-            } else {
-                startTime = new Date();
-            }
-
-            if (renderFunction) {
-                canvas.width = canvas.height = CANVAS_SIZE * pixelRatio;
-                ctx.scale(pixelRatio, pixelRatio);
-
-                let index = 0;
-                for (let y = 0; y < GRID_SIZE; y++) {
-                    for (let x = 0; x < GRID_SIZE; x++) {
-                        const value = Number(renderFunction(time, index, x, y));
-                        const center = DOT_SIZE / 2;
-                        let color = '#FFF';
-                        let size = value * DOT_SIZE / 2;
-
-                        if (size < 0) {
-                            size = -size;
-                            color = '#F24';
-                        }
-
-                        if (size > DOT_SIZE / 2) {
-                            size = DOT_SIZE / 2;
-                        }
-
-                        ctx.beginPath();
-                        ctx.fillStyle = color;
-                        ctx.arc(
-                            x * (DOT_SIZE + SPACING) + center,
-                            y * (DOT_SIZE + SPACING) + center,
-                            size,
-                            0,
-                            2 * Math.PI
-                        );
-                        ctx.fill();
-                        index++;
-                    }
-                }
-            }
-
-            window.requestAnimationFrame(animate);
-        }
-
-        // Start animation
-        animate();
-
-        // Click handler for cycling through examples
-        canvas.addEventListener('click', () => {
-            const exampleValues = Object.values(examples);
-            const currentIndex = exampleValues.indexOf(code);
-            if (exampleValues[currentIndex + 1]) {
-                const nextExample = exampleValues[currentIndex + 1];
-                input.value = nextExample;
-                updateComment();
-                updateCode();
-            }
-        });
-
-        // Handle browser back/forward
-        window.onpopstate = () => {
-            loadCodeFromURL();
-            updateCode();
-        };
-
-        // Initial comment update
-        updateComment();
-    </script>
-</body>
+    <head>
+        <title>My First Web Page</title>
+    </head>
+    <body>
+        <h1>Welcome to My First Web Page</h1>
+        <p>This is a simple web page created with HTML.</p>
+        <script type="module">
+            // Import the functions you need from the SDKs you need
+            import { initializeApp } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-app.js";
+            import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-analytics.js";
+            import { collection, addDoc } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-firestore.js"; 
+            // TODO: Add SDKs for Firebase products that you want to use
+            // https://firebase.google.com/docs/web/setup#available-libraries
+          
+            // Your web app's Firebase configuration
+            // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+            const firebaseConfig = {
+              apiKey: "AIzaSyA0tk3uaALwRKl2XuQMr3tNl4HAro57lds",
+              authDomain: "db-test-d6680.firebaseapp.com",
+              projectId: "db-test-d6680",
+              storageBucket: "db-test-d6680.firebasestorage.app",
+              messagingSenderId: "849444729659",
+              appId: "1:849444729659:web:6aa79b5479f0fbe6ff7d1e",
+              measurementId: "G-RGZLT05GH6"
+            };
+          
+            // Initialize Firebase
+            const app = initializeApp(firebaseConfig);
+            const analytics = getAnalytics(app);
+            const db = getFirestore(app);
+          
+try {
+  const docRef = await addDoc(collection(db, "users"), {
+    first: "Ada",
+    last: "Lovelace",
+    born: 1815
+  });
+  console.log("Document written with ID: ", docRef.id);
+} catch (e) {
+  console.error("Error adding document: ", e);
+}
+          </script>
+    </body>
 </html>
