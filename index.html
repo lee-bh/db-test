@@ -5,11 +5,16 @@
     <body>
         <h1>Welcome to My First Web Page</h1>
         <p>This is a simple web page created with HTML.</p>
+        <div id="users"></div>
+        <input type="text" id="first-name" placeholder="Enter your first name">
+        <input type="text" id="last-name" placeholder="Enter your last name">
+        <input type="text" id="born-year" placeholder="Enter your born year">
+        <button id="add-user">Add User</button>
         <script type="module">
             // Import the functions you need from the SDKs you need
             import { initializeApp } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-app.js";
             import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-analytics.js";
-            import { collection, addDoc } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-firestore.js"; 
+            import { collection, addDoc, getFirestore, getDocs } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-firestore.js"; 
             // TODO: Add SDKs for Firebase products that you want to use
             // https://firebase.google.com/docs/web/setup#available-libraries
           
@@ -29,17 +34,32 @@
             const app = initializeApp(firebaseConfig);
             const analytics = getAnalytics(app);
             const db = getFirestore(app);
-          
-try {
-  const docRef = await addDoc(collection(db, "users"), {
-    first: "Ada",
-    last: "Lovelace",
-    born: 1815
-  });
-  console.log("Document written with ID: ", docRef.id);
-} catch (e) {
-  console.error("Error adding document: ", e);
+
+getUsers();
+
+async function getUsers() {
+    const users = await getDocs(collection(db, "users"));
+    console.log(users);
+    users.forEach((user) => {
+        const userElement = document.createElement("div");
+        userElement.innerHTML = `${user.data().first} ${user.data().last} ${user.data().born}`;
+        document.getElementById("users").appendChild(userElement);
+    });
 }
+
+async function addUser() {
+    const firstName = document.getElementById("first-name").value;
+    const lastName = document.getElementById("last-name").value;
+    const bornYear = document.getElementById("born-year").value;
+    const user = {
+        first: firstName,
+        last: lastName,
+        born: bornYear
+    }
+    const docRef = await addDoc(collection(db, "users"), user);
+    console.log("Document written with ID: ", docRef.id);
+} 
+document.getElementById("add-user").addEventListener("click", addUser);
           </script>
     </body>
 </html>
